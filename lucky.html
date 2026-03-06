@@ -34,6 +34,23 @@
             padding-top: env(safe-area-inset-top, 5px);
         }
 
+        .clear-data-btn {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 1000;
+            opacity: 0;
+        }
+
+        .clear-data-btn:active {
+            opacity: 0.3;
+        }
+
         .game-container {
             width: 100%;
             max-width: 350px;
@@ -478,6 +495,7 @@
     </style>
 </head>
 <body>
+    <button class="clear-data-btn" onclick="clearAllData()"></button>
     <div class="game-container">
         <div class="title-wrapper">
             <div class="title" id="titleEl">手气王</div>
@@ -532,75 +550,6 @@
                     <p>• 中奖金额自动存入余额</p>
                     <p>• 每 <span class="highlight">10元</span> 余额可兑换 <span class="highlight">1次</span> 游戏机会</p>
                     <p>• 余额不足10元时无法继续游戏</p>
-                </div>
-            </div>
-
-            <div class="rule-section">
-                <div class="rule-title">中奖概率</div>
-                <div class="rule-content">
-                    <table class="prize-table">
-                        <thead>
-                            <tr>
-                                <th>奖级</th>
-                                <th>中奖概率</th>
-                                <th>平均刮几张</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>小奖</td>
-                                <td class="highlight">10%</td>
-                                <td>10张</td>
-                            </tr>
-                            <tr>
-                                <td>中奖</td>
-                                <td class="highlight">3%</td>
-                                <td>33.3张</td>
-                            </tr>
-                            <tr>
-                                <td>大奖</td>
-                                <td class="highlight">0.3%</td>
-                                <td>333.3张</td>
-                            </tr>
-                            <tr>
-                                <td>总中奖率</td>
-                                <td class="highlight">13.3%</td>
-                                <td>7.5张</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="rule-section">
-                <div class="rule-title">奖金设置</div>
-                <div class="rule-content">
-                    <table class="prize-table">
-                        <thead>
-                            <tr>
-                                <th>奖级</th>
-                                <th>奖金范围</th>
-                                <th>具体金额</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="emoji">🎉</span> 小奖</td>
-                                <td>2-8元</td>
-                                <td>2、3、5、8元</td>
-                            </tr>
-                            <tr>
-                                <td><span class="emoji">🎊</span> 中奖</td>
-                                <td>20-35元</td>
-                                <td>20、22、25、30、35元</td>
-                            </tr>
-                            <tr>
-                                <td><span class="emoji">🏆</span> 大奖</td>
-                                <td>90-120元</td>
-                                <td>90、100、120元</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
 
@@ -1140,6 +1089,9 @@
         window.clearAllData = function() {
             localStorage.removeItem('shouqiwang_player_data');
             playerData = { balance: 0, chances: CONFIG.initialChances, isNewPlayer: true };
+            generateCells();
+            renderGrid();
+            initCanvas();
             updateDisplay();
             alert('数据已重置！余额: 0元, 次数: ' + CONFIG.initialChances + '次');
         };
