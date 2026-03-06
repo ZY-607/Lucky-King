@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>喜相逢刮刮乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        :root {
+            --primary-red: #C41E3A;
+            --dark-red: #8B0000;
+            --gold: #FFD700;
+            --light-gold: #FFF8DC;
+            --bg-gradient: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%);
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-gradient);
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            gap: 8px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 8px 0;
+            flex-shrink: 0;
+        }
+
+        .title {
+            font-size: clamp(24px, 6vw, 36px);
+            font-weight: 900;
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            letter-spacing: 8px;
+        }
+
+        .subtitle {
+            font-size: clamp(12px, 3vw, 14px);
+            color: var(--gold);
+            margin-top: 4px;
+            opacity: 0.8;
+        }
+
+        .prize-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 20px;
+            background: linear-gradient(180deg, rgba(139, 0, 0, 0.8) 0%, rgba(196, 30, 58, 0.6) 100%);
+            border-radius: 15px;
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+        }
+
+        .prize-label {
+            font-size: clamp(14px, 4vw, 18px);
+            color: var(--light-gold);
+        }
+
+        .prize-amount {
+            font-size: clamp(24px, 7vw, 36px);
+            font-weight: 900;
+            color: var(--gold);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .prize-unit {
+            font-size: clamp(14px, 4vw, 18px);
+            color: var(--light-gold);
+        }
+
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+            min-height: 0;
+        }
+
+        .grid-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 9/5;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2a0a0a 0%, #1a0505 100%);
+            border: 3px solid var(--gold);
+            border-radius: 10px;
+            padding: 3px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2), inset 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .cell {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, #FFF8DC 0%, #FFE4B5 100%);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cell-char {
+            font-size: clamp(16px, 4.5vw, 28px);
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .cell-char.xi {
+            color: var(--primary-red);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell-char.shuang-xi {
+            color: var(--dark-red);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            font-size: clamp(14px, 4vw, 24px);
+        }
+
+        .cell-prize {
+            font-size: clamp(8px, 2.2vw, 12px);
+            color: #B8860B;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        .cell.empty .cell-char {
+            color: #CCC;
+            font-size: clamp(12px, 3vw, 18px);
+        }
+
+        .scratch-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            touch-action: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 10px 0;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            font-size: clamp(14px, 4vw, 16px);
+            font-weight: 700;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+        }
+
+        .btn-reset {
+            background: linear-gradient(180deg, var(--primary-red) 0%, var(--dark-red) 100%);
+            color: var(--gold);
+            border: 2px solid var(--gold);
+            box-shadow: 0 4px 15px rgba(196, 30, 58, 0.4);
+        }
+
+        .btn-reset:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(196, 30, 58, 0.4);
+        }
+
+        .btn-hint {
+            background: linear-gradient(180deg, #4a4a4a 0%, #2a2a2a 100%);
+            color: var(--light-gold);
+            border: 2px solid #666;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-hint:active {
+            transform: scale(0.95);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold) 0%, #FFA500 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 5px 0;
+            font-size: clamp(11px, 3vw, 13px);
+            color: var(--light-gold);
+            opacity: 0.8;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-value {
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        @keyframes shine {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .prize-amount.animating {
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .instructions {
+            text-align: center;
+            font-size: clamp(10px, 2.5vw, 12px);
+            color: var(--light-gold);
+            opacity: 0.6;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div class="title">喜 相 逢</div>
+            <div class="subtitle">刮出好运 喜从天降</div>
+        </div>
+
+        <div class="prize-display">
+            <span class="prize-label">中奖金额</span>
+            <span class="prize-amount" id="totalPrize">0</span>
+            <span class="prize-unit">元</span>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span>已刮开:</span>
+                <span class="stat-value" id="scratchedCount">0</span>
+                <span>/ 45</span>
+            </div>
+            <div class="stat-item">
+                <span>刮开进度:</span>
+                <span class="stat-value" id="progressPercent">0%</span>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="game-area">
+            <div class="grid-wrapper">
+                <div class="grid-container" id="gridContainer"></div>
+                <canvas class="scratch-canvas" id="scratchCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="instructions">用手指刮开银色区域，揭晓惊喜</div>
+
+        <div class="controls">
+            <button class="btn btn-reset" id="resetBtn">重新开始</button>
+            <button class="btn btn-hint" id="hintBtn">显示全部</button>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            gridCols: 9,
+            gridRows: 5,
+            totalCells: 45,
+            prizes: [5, 10, 20, 50, 100, 200, 500],
+            prizeWeights: [30, 25, 20, 12, 8, 4, 1],
+            winChance: 0.6,
+            doubleXiChance: 0.15,
+            scratchRadius: 25,
+            revealThreshold: 0.5
+        };
+
+        let gameState = {
+            cells: [],
+            totalPrize: 0,
+            scratchedCells: new Set(),
+            isScratching: false,
+            revealed: false
+        };
+
+        const gridContainer = document.getElementById('gridContainer');
+        const scratchCanvas = document.getElementById('scratchCanvas');
+        const ctx = scratchCanvas.getContext('2d');
+        const totalPrizeEl = document.getElementById('totalPrize');
+        const scratchedCountEl = document.getElementById('scratchedCount');
+        const progressPercentEl = document.getElementById('progressPercent');
+        const progressFillEl = document.getElementById('progressFill');
+        const resetBtn = document.getElementById('resetBtn');
+        const hintBtn = document.getElementById('hintBtn');
+
+        function weightedRandom(weights) {
+            const totalWeight = weights.reduce((a, b) => a + b, 0);
+            let random = Math.random() * totalWeight;
+            for (let i = 0; i < weights.length; i++) {
+                random -= weights[i];
+                if (random <= 0) return i;
+            }
+            return weights.length - 1;
+        }
+
+        function generateCells() {
+            gameState.cells = [];
+            gameState.totalPrize = 0;
+            gameState.scratchedCells.clear();
+            gameState.revealed = false;
+
+            for (let i = 0; i < CONFIG.totalCells; i++) {
+                const isWinner = Math.random() < CONFIG.winChance;
+                
+                if (isWinner) {
+                    const prizeIndex = weightedRandom(CONFIG.prizeWeights);
+                    const basePrize = CONFIG.prizes[prizeIndex];
+                    const isDoubleXi = Math.random() < CONFIG.doubleXiChance;
+                    
+                    gameState.cells.push({
+                        index: i,
+                        type: isDoubleXi ? 'shuang-xi' : 'xi',
+                        prize: basePrize,
+                        actualPrize: isDoubleXi ? basePrize * 2 : basePrize,
+                        scratched: false
+                    });
+                } else {
+                    gameState.cells.push({
+                        index: i,
+                        type: 'empty',
+                        prize: 0,
+                        actualPrize: 0,
+                        scratched: false
+                    });
+                }
+            }
+        }
+
+        function renderGrid() {
+            gridContainer.innerHTML = '';
+            
+            gameState.cells.forEach((cell, index) => {
+                const cellEl = document.createElement('div');
+                cellEl.className = `cell ${cell.type}`;
+                cellEl.dataset.index = index;
+                
+                const contentEl = document.createElement('div');
+                contentEl.className = 'cell-content';
+                
+                const charEl = document.createElement('div');
+                charEl.className = `cell-char ${cell.type}`;
+                
+                if (cell.type === 'xi') {
+                    charEl.textContent = '喜';
+                } else if (cell.type === 'shuang-xi') {
+                    charEl.textContent = '囍';
+                } else {
+                    charEl.textContent = '谢谢';
+                }
+                
+                const prizeEl = document.createElement('div');
+                prizeEl.className = 'cell-prize';
+                
+                if (cell.type !== 'empty') {
+                    prizeEl.textContent = `${cell.actualPrize}元`;
+                }
+                
+                contentEl.appendChild(charEl);
+                contentEl.appendChild(prizeEl);
+                cellEl.appendChild(contentEl);
+                gridContainer.appendChild(cellEl);
+            });
+        }
+
+        function initCanvas() {
+            const rect = gridContainer.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            
+            scratchCanvas.width = rect.width * dpr;
+            scratchCanvas.height = rect.height * dpr;
+            scratchCanvas.style.width = rect.width + 'px';
+            scratchCanvas.style.height = rect.height + 'px';
+            
+            ctx.scale(dpr, dpr);
+            
+            drawScratchLayer(rect.width, rect.height);
+        }
+
+        function drawScratchLayer(width, height) {
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(0, 0, width, height);
+            
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const size = Math.random() * 3 + 1;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.fillStyle = '#888';
+            ctx.font = 'bold 14px "Microsoft YaHei", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const cellWidth = width / CONFIG.gridCols;
+            const cellHeight = height / CONFIG.gridRows;
+            
+            for (let row = 0; row < CONFIG.gridRows; row++) {
+                for (let col = 0; col < CONFIG.gridCols; col++) {
+                    const x = col * cellWidth + cellWidth / 2;
+                    const y = row * cellHeight + cellHeight / 2;
+                    ctx.fillText('刮开有奖', x, y);
+                }
+            }
+        }
+
+        function getEventPos(e) {
+            const rect = scratchCanvas.getBoundingClientRect();
+            let clientX, clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function scratch(x, y) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, CONFIG.scratchRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            checkCellReveal(x, y);
+        }
+
+        function checkCellReveal(x, y) {
+            const rect = scratchCanvas.getBoundingClientRect();
+            const cellWidth = rect.width / CONFIG.gridCols;
+            const cellHeight = rect.height / CONFIG.gridRows;
+            
+            const col = Math.floor(x / cellWidth);
+            const row = Math.floor(y / cellHeight);
+            const index = row * CONFIG.gridCols + col;
+            
+            if (index >= 0 && index < CONFIG.totalCells && !gameState.scratchedCells.has(index)) {
+                const cell = gameState.cells[index];
+                const cellRect = {
+                    x: col * cellWidth,
+                    y: row * cellHeight,
+                    width: cellWidth,
+                    height: cellHeight
+                };
+                
+                const scratchedArea = calculateScratchedArea(cellRect);
+                
+                if (scratchedArea >= CONFIG.revealThreshold) {
+                    revealCell(index);
+                }
+            }
+        }
+
+        function calculateScratchedArea(cellRect) {
+            const dpr = window.devicePixelRatio || 1;
+            const x = Math.floor(cellRect.x * dpr);
+            const y = Math.floor(cellRect.y * dpr);
+            const w = Math.floor(cellRect.width * dpr);
+            const h = Math.floor(cellRect.height * dpr);
+            
+            try {
+                const imageData = ctx.getImageData(x, y, w, h);
+                const data = imageData.data;
+                let transparentPixels = 0;
+                
+                for (let i = 3; i < data.length; i += 4) {
+                    if (data[i] < 128) {
+                        transparentPixels++;
+                    }
+                }
+                
+                return transparentPixels / (data.length / 4);
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function revealCell(index) {
+            if (gameState.scratchedCells.has(index)) return;
+            
+            gameState.scratchedCells.add(index);
+            const cell = gameState.cells[index];
+            cell.scratched = true;
+            
+            if (cell.actualPrize > 0) {
+                gameState.totalPrize += cell.actualPrize;
+                updatePrizeDisplay();
+            }
+            
+            updateProgress();
+        }
+
+        function updatePrizeDisplay() {
+            totalPrizeEl.textContent = gameState.totalPrize;
+            totalPrizeEl.classList.add('animating');
+            setTimeout(() => totalPrizeEl.classList.remove('animating'), 500);
+        }
+
+        function updateProgress() {
+            const count = gameState.scratchedCells.size;
+            const percent = Math.round((count / CONFIG.totalCells) * 100);
+            
+            scratchedCountEl.textContent = count;
+            progressPercentEl.textContent = percent + '%';
+            progressFillEl.style.width = percent + '%';
+        }
+
+        function handleStart(e) {
+            e.preventDefault();
+            gameState.isScratching = true;
+            const pos = getEventPos(e);
+            scratch(pos.x, pos.y);
+        }
+
+        function handleMove(e) {
+            e.preventDefault();
+            if (!gameState.isScratching) return;
+            
+            const pos = getEventPos(e);
+            scratch(pos.x, pos.y);
+        }
+
+        function handleEnd(e) {
+            e.preventDefault();
+            gameState.isScratching = false;
+            checkAllCells();
+        }
+
+        function checkAllCells() {
+            const rect = scratchCanvas.getBoundingClientRect();
+            const cellWidth = rect.width / CONFIG.gridCols;
+            const cellHeight = rect.height / CONFIG.gridRows;
+            
+            for (let i = 0; i < CONFIG.totalCells; i++) {
+                if (!gameState.scratchedCells.has(i)) {
+                    const row = Math.floor(i / CONFIG.gridCols);
+                    const col = i % CONFIG.gridCols;
+                    
+                    const cellRect = {
+                        x: col * cellWidth,
+                        y: row * cellHeight,
+                        width: cellWidth,
+                        height: cellHeight
+                    };
+                    
+                    const scratchedArea = calculateScratchedArea(cellRect);
+                    if (scratchedArea >= CONFIG.revealThreshold) {
+                        revealCell(i);
+                    }
+                }
+            }
+        }
+
+        function revealAll() {
+            ctx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+            gameState.revealed = true;
+            
+            gameState.cells.forEach((cell, index) => {
+                if (!gameState.scratchedCells.has(index)) {
+                    revealCell(index);
+                }
+            });
+        }
+
+        function resetGame() {
+            generateCells();
+            renderGrid();
+            initCanvas();
+            updateProgress();
+            totalPrizeEl.textContent = '0';
+        }
+
+        function init() {
+            generateCells();
+            renderGrid();
+            
+            setTimeout(() => {
+                initCanvas();
+            }, 100);
+            
+            scratchCanvas.addEventListener('mousedown', handleStart);
+            scratchCanvas.addEventListener('mousemove', handleMove);
+            scratchCanvas.addEventListener('mouseup', handleEnd);
+            scratchCanvas.addEventListener('mouseleave', handleEnd);
+            
+            scratchCanvas.addEventListener('touchstart', handleStart, { passive: false });
+            scratchCanvas.addEventListener('touchmove', handleMove, { passive: false });
+            scratchCanvas.addEventListener('touchend', handleEnd, { passive: false });
+            scratchCanvas.addEventListener('touchcancel', handleEnd, { passive: false });
+            
+            resetBtn.addEventListener('click', resetGame);
+            hintBtn.addEventListener('click', revealAll);
+            
+            window.addEventListener('resize', () => {
+                setTimeout(initCanvas, 100);
+            });
+            
+            updateProgress();
+        }
+
+        init();
+    </script>
+</body>
+</html>
